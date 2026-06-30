@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>habit commits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --border:    #30363d;
+    --muted:     #8b949e;
+    --text:      #e6edf3;
+    --accent:    #58a6ff;
+    --green0:    #1f2731;  /* empty */
+    --green1:    #0e4429;
+    --green2:    #006d32;
+    --green3:    #26a641;
+    --green4:    #39d353;
+    --cell:      14px;
+    --gap:       4px;
+    --radius:    6px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo svg { color: var(--accent); }
+  .streak-badge {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--green4);
+    background: rgba(57,211,83,.1);
+    border: 1px solid rgba(57,211,83,.25);
+    border-radius: 20px;
+    padding: 3px 10px;
+  }
+
+  /* ─── LAYOUT ─── */
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+  main {
+    flex: 1;
+    padding: 28px 28px 28px 28px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ─── COMMIT INPUT ─── */
+  .commit-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .commit-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .commit-header span.branch {
+    color: var(--green4);
+  }
+  .commit-form {
+    display: flex;
+    align-items: stretch;
+  }
+  .commit-prefix {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 12px 0 12px 14px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    user-select: none;
+  }
+  .commit-prefix .cmd { color: var(--green4); }
+  .commit-prefix .flag { color: var(--accent); }
+  #commit-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    padding: 12px 6px;
+    caret-color: var(--accent);
+  }
+  #commit-input::placeholder { color: #484f58; }
+  .commit-suffix {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    padding-right: 8px;
+    user-select: none;
+  }
+  .commit-btn {
+    background: #238636;
+    border: 1px solid rgba(240,246,252,.1);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 0 18px;
+    cursor: pointer;
+    transition: background .15s;
+    white-space: nowrap;
+  }
+  .commit-btn:hover { background: #2ea043; }
+  .commit-btn:active { background: #238636; transform: scale(.98); }
+
+  /* ─── HABIT SELECTOR ─── */
+  .habit-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .habit-row label {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .habit-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    background: transparent;
+    color: var(--muted);
+    transition: all .15s;
+  }
+  .habit-tag.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+    font-weight: 500;
+  }
+  .habit-tag:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+  .habit-tag-label {
+    cursor: pointer;
+    outline: none;
+    min-width: 8px;
+    user-select: none;
+  }
+  .habit-tag-label[contenteditable="true"] {
+    cursor: text;
+    user-select: text;
+    border-bottom: 1px dashed currentColor;
+  }
+  .habit-tag-delete {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0 1px;
+    color: inherit;
+    opacity: .55;
+    transition: opacity .12s;
+  }
+  .habit-tag-delete:hover { opacity: 1; color: #f85149; }
+  .habit-tag.active .habit-tag-delete:hover { color: #b00; }
+  #new-habit-input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    outline: none;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 4px 12px;
+    width: 120px;
+    transition: border-color .15s;
+  }
+  #new-habit-input:focus { border-color: var(--accent); }
+  #new-habit-input::placeholder { color: #484f58; }
+  .add-habit-btn {
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: 20px;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .add-habit-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ─── HEATMAP SECTION ─── */
+  .heatmap-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 20px 16px;
+  }
+  .heatmap-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .heatmap-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .heatmap-title .count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .year-tabs {
+    display: flex;
+    gap: 4px;
+  }
+  .year-tab {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    transition: all .12s;
+  }
+  .year-tab.active { border-color: var(--border); color: var(--text); background: var(--bg); }
+  .year-tab:hover:not(.active) { color: var(--text); }
+
+  /* month labels — lives inside the scrollable area, scrolls in lockstep with the grid */
+  .heatmap-months {
+    position: relative;
+    height: 16px;
+    margin-bottom: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    user-select: none;
+  }
+  .month-label { position: absolute; top: 0; white-space: nowrap; }
+
+  .heatmap-body {
+    display: flex;
+    gap: 4px;
+    align-items: flex-start;
+  }
+  .day-labels {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    padding-top: calc(16px + 4px); /* offset to align with grid rows below month labels */
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .day-label {
+    height: var(--cell);
+    line-height: var(--cell);
+    width: 22px;
+    text-align: right;
+  }
+  .day-label.hide { visibility: hidden; }
+
+  .heatmap-grid-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex: 1;
+    padding-bottom: 4px; /* room for scrollbar without clipping cells */
+  }
+  .heatmap-scroll-inner {
+    width: fit-content;
+  }
+  .heatmap-grid {
+    display: flex;
+    gap: var(--gap);
+    width: fit-content;
+  }
+  .week-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+  }
+  .heat-cell {
+    width: var(--cell);
+    height: var(--cell);
+    border-radius: 0;
+    background: var(--green0);
+    cursor: pointer;
+    transition: opacity .1s, outline .1s;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .heat-cell:hover { opacity: .75; outline: 1px solid rgba(255,255,255,.4); }
+  .heat-cell[data-level="1"] { background: var(--green1); }
+  .heat-cell[data-level="2"] { background: var(--green2); }
+  .heat-cell[data-level="3"] { background: var(--green3); }
+  .heat-cell[data-level="4"] { background: var(--green4); }
+
+  /* Legend */
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+    justify-content: flex-end;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .legend-cell {
+    width: 11px; height: 11px;
+    border-radius: 0;
+  }
+
+  /* ─── TOOLTIP ─── */
+  #tooltip {
+    position: fixed;
+    background: #1c2128;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    pointer-events: none;
+    z-index: 999;
+    display: none;
+    max-width: 240px;
+    line-height: 1.6;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  #tooltip .tt-date { color: var(--muted); font-size: 10px; margin-bottom: 4px; }
+  #tooltip .tt-count { color: var(--green4); font-weight: 500; }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: 300px;
+    flex-shrink: 0;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .sidebar-header span { color: var(--text); }
+  .clear-btn {
+    font-size: 10px;
+    color: #f85149;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    opacity: .6;
+    transition: opacity .15s;
+  }
+  .clear-btn:hover { opacity: 1; }
+  .log-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+  .log-list::-webkit-scrollbar { width: 4px; }
+  .log-list::-webkit-scrollbar-track { background: transparent; }
+  .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-item {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(48,54,61,.5);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: fadeIn .2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  .log-item:last-child { border-bottom: none; }
+  .log-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .log-hash {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+  }
+  .log-habit-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .log-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+  .log-msg {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  .log-delete {
+    background: none;
+    border: none;
+    color: #484f58;
+    cursor: pointer;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 0;
+    align-self: flex-end;
+    transition: color .12s;
+  }
+  .log-delete:hover { color: #f85149; }
+
+  .empty-log {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 2;
+  }
+  .empty-log .big { font-size: 28px; display: block; margin-bottom: 8px; }
+
+  /* ─── DAY PANEL ─── */
+  .day-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: none;
+  }
+  .day-panel.visible { display: block; }
+  .day-panel-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .day-panel-header .dp-date { color: var(--accent); }
+  .day-panel-close {
+    background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1;
+  }
+  .day-commits-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; }
+  .dc-item {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    font-size: 12px;
+  }
+  .dc-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green3);
+    margin-top: 4px; flex-shrink: 0;
+  }
+  .dc-text { flex: 1; line-height: 1.4; }
+  .dc-habit { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); }
+
+  /* scrollbar global */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* responsive */
+  @media (max-width: 800px) {
+    .sidebar { display: none; }
+    :root { --cell: 10px; --gap: 2px; }
+  }
+
+  /* ─── ONBOARDING ─── */
+  .onboard-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(1,4,9,.85);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .onboard-overlay.visible { display: flex; }
+  .onboard-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    animation: modalIn .25s ease;
+  }
+  @keyframes modalIn { from { opacity:0; transform: translateY(8px) scale(.98); } to { opacity:1; transform:none; } }
+  .onboard-icon {
+    color: var(--green4);
+    display: flex;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+  .onboard-modal h1 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .onboard-modal p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 22px;
+  }
+  .onboard-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  #onboard-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    outline: none;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 9px 12px;
+    transition: border-color .15s;
+  }
+  #onboard-input:focus { border-color: var(--accent); }
+  #onboard-input::placeholder { color: #484f58; }
+  #onboard-add-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 0 16px;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
+  }
+  #onboard-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .onboard-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    min-height: 30px;
+    margin-bottom: 22px;
+  }
+  .onboard-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px 4px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    animation: tagIn .15s ease;
+  }
+  @keyframes tagIn { from { opacity:0; transform: scale(.9); } to { opacity:1; transform:none; } }
+  .onboard-tag button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0;
+  }
+  .onboard-tag button:hover { color: #f85149; }
+  .onboard-start-btn {
+    width: 100%;
+    background: #238636;
+    border: 1px solid rgba(240,246,252,.1);
+    border-radius: 6px;
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 11px;
+    cursor: pointer;
+    transition: background .15s, opacity .15s;
+  }
+  .onboard-start-btn:hover:not(:disabled) { background: #2ea043; }
+  .onboard-start-btn:disabled {
+    background: var(--bg);
+    color: var(--muted);
+    cursor: not-allowed;
+    border-color: var(--border);
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── ONBOARDING MODAL ─── -->
+<div id="onboard-overlay" class="onboard-overlay">
+  <div class="onboard-modal">
+    <div class="onboard-icon">
+      <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+      </svg>
+    </div>
+    <h1>set up your repo</h1>
+    <p>create a branch for each habit you want to track. you can add more anytime.</p>
+
+    <div class="onboard-input-row">
+      <input id="onboard-input" placeholder="e.g. workout, reading, journaling…" maxlength="24" autocomplete="off" />
+      <button id="onboard-add-btn">add</button>
+    </div>
+
+    <div class="onboard-tags" id="onboard-tags"></div>
+
+    <button id="onboard-start-btn" class="onboard-start-btn" disabled>start committing →</button>
+  </div>
+</div>
+
+
+<header>
+  <div class="logo">
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+    </svg>
+    habit commits
+  </div>
+  <div class="streak-badge" id="streak-badge">🔥 0 day streak</div>
+</header>
+
+<div class="layout">
+  <main>
+    <!-- Habit Selector -->
+    <div class="habit-row" id="habit-row">
+      <label>branch /</label>
+      <!-- tags injected by JS -->
+      <input id="new-habit-input" placeholder="new habit…" maxlength="24" />
+      <button class="add-habit-btn" id="add-habit-btn">+ add</button>
+    </div>
+
+    <!-- Commit Input -->
+    <div class="commit-box">
+      <div class="commit-header">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="color:var(--green4)">
+          <path d="M10.5 7.75a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zm1.43.75a4.002 4.002 0 01-7.86 0H.75a.75.75 0 110-1.5h3.32a4.001 4.001 0 017.86 0h3.32a.75.75 0 110 1.5h-3.32z"/>
+        </svg>
+        <span class="branch" id="active-branch">main</span>
+        <span>·</span>
+        <span id="today-label">today</span>
+      </div>
+      <div class="commit-form">
+        <div class="commit-prefix">
+          <span class="cmd">git commit</span>&nbsp;<span class="flag">-m</span>&nbsp;"
+        </div>
+        <input id="commit-input" placeholder='meditated for 20 mins — felt clear' maxlength="120" autocomplete="off" spellcheck="false" />
+        <span class="commit-suffix">"</span>
+        <button class="commit-btn" id="commit-btn">commit</button>
+      </div>
+    </div>
+
+    <!-- Day Panel (click on cell) -->
+    <div class="day-panel" id="day-panel">
+      <div class="day-panel-header">
+        <span class="dp-date" id="dp-date"></span>
+        <span id="dp-count"></span>
+        <button class="day-panel-close" id="dp-close">×</button>
+      </div>
+      <div class="day-commits-list" id="dp-list"></div>
+    </div>
+
+    <!-- Heatmap -->
+    <div class="heatmap-section">
+      <div class="heatmap-top">
+        <div class="heatmap-title">
+          contributions
+          <span class="count" id="year-count"></span>
+        </div>
+        <div class="year-tabs" id="year-tabs"></div>
+      </div>
+      <div class="heatmap-body">
+        <div class="day-labels" id="day-labels">
+          <div class="day-label hide">S</div>
+          <div class="day-label">M</div>
+          <div class="day-label hide">T</div>
+          <div class="day-label">W</div>
+          <div class="day-label hide">T</div>
+          <div class="day-label">F</div>
+          <div class="day-label hide">S</div>
+        </div>
+        <div class="heatmap-grid-wrap">
+          <div class="heatmap-scroll-inner">
+            <div class="heatmap-months" id="month-labels"></div>
+            <div class="heatmap-grid" id="heatmap-grid"></div>
+          </div>
+        </div>
+      </div>
+      <div class="heatmap-legend">
+        Less
+        <div class="legend-cell" style="background:var(--green0);"></div>
+        <div class="legend-cell" style="background:var(--green1);"></div>
+        <div class="legend-cell" style="background:var(--green2);"></div>
+        <div class="legend-cell" style="background:var(--green3);"></div>
+        <div class="legend-cell" style="background:var(--green4);"></div>
+        More
+      </div>
+    </div>
+  </main>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span>commit log</span>
+      <button class="clear-btn" id="clear-all-btn">clear all</button>
+    </div>
+    <div class="log-list" id="log-list"></div>
+  </aside>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+// ─── STORAGE ───────────────────────────────────────────────
+const KEY_COMMITS = 'habit_commits_v1';
+const KEY_HABITS  = 'habit_list_v1';
+
+function loadCommits() {
+  try { return JSON.parse(localStorage.getItem(KEY_COMMITS) || '[]'); } catch { return []; }
+}
+function saveCommits(arr) {
+  localStorage.setItem(KEY_COMMITS, JSON.stringify(arr));
+}
+function loadHabits() {
+  try {
+    const h = JSON.parse(localStorage.getItem(KEY_HABITS));
+    return Array.isArray(h) ? h : [];
+  } catch { return []; }
+}
+function saveHabits(arr) {
+  localStorage.setItem(KEY_HABITS, JSON.stringify(arr));
+}
+
+// ─── STATE ─────────────────────────────────────────────────
+let commits   = loadCommits();
+let habits    = loadHabits();
+let activeHabit = habits[0] || null;
+let viewYear  = new Date().getFullYear();
+
+// ─── UTILS ─────────────────────────────────────────────────
+function dateKey(d) {
+  // YYYY-MM-DD local
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function parseKey(k) {
+  const [y,m,d] = k.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+function fmtDate(d) {
+  return d.toLocaleDateString('en-US', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+}
+function fmtTime(ts) {
+  return new Date(ts).toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+}
+function randomHash() {
+  return Math.random().toString(16).slice(2, 9);
+}
+
+// count commits per day within a date range (inclusive), optional habit filter
+function buildDayMap(rangeStart, rangeEnd, habitFilter) {
+  const map = {};
+  for (const c of commits) {
+    const d = new Date(c.ts); d.setHours(0,0,0,0);
+    if (d < rangeStart || d > rangeEnd) continue;
+    if (habitFilter && c.habit !== habitFilter) continue;
+    map[c.date] = (map[c.date] || 0) + 1;
+  }
+  return map;
+}
+
+// colour level 0-4 based on count, using GitHub-style fixed thresholds
+// scaled to the max commits-per-day seen this year
+function level(count, max) {
+  if (!count) return 0;
+  if (max <= 1) return count >= 1 ? 4 : 0; // only ever 1/day -> full green
+  const step = max / 4;
+  if (count <= step) return 1;
+  if (count <= step * 2) return 2;
+  if (count <= step * 3) return 3;
+  return 4;
+}
+
+// ─── HEATMAP ───────────────────────────────────────────────
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function buildHeatmap() {
+  const grid  = document.getElementById('heatmap-grid');
+  const monthLabelsCont = document.getElementById('month-labels');
+  grid.innerHTML = '';
+  monthLabelsCont.innerHTML = '';
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const isCurrentYear = viewYear === today.getFullYear();
+
+  // Always a fixed calendar year: Jan 1 → Dec 31 (current year is capped at today)
+  const jan1 = new Date(viewYear, 0, 1);
+  const gridStart = new Date(jan1);
+  gridStart.setDate(jan1.getDate() - jan1.getDay()); // back to preceding Sunday
+
+  const dec31 = new Date(viewYear, 11, 31);
+  const gridEnd = new Date(dec31);
+  gridEnd.setDate(dec31.getDate() + (6 - dec31.getDay())); // forward to following Saturday
+
+  const rangeCap = isCurrentYear ? today : dec31;
+
+  const dayMap = buildDayMap(gridStart, rangeCap, null);
+  const allCounts = Object.values(dayMap);
+  const maxCount  = allCounts.length ? Math.max(...allCounts) : 0;
+
+  const totalInRange = commits.filter(c => {
+    const d = new Date(c.ts); d.setHours(0,0,0,0);
+    return d >= jan1 && d <= rangeCap;
+  }).length;
+  document.getElementById('year-count').textContent = `${totalInRange} commits in ${viewYear}`;
+
+  let cur = new Date(gridStart);
+  let weekIdx = 0;
+  let monthPositions = {}; // month key (y-m) → weekIdx where it first appears
+  let weekCols = [];
+
+  while (cur <= gridEnd) {
+    const col = [];
+    for (let d = 0; d < 7; d++) {
+      col.push(new Date(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    weekCols.push(col);
+
+    for (const day of col) {
+      if (day.getFullYear() !== viewYear) continue; // only label months within the target year
+      const mk = `${day.getFullYear()}-${day.getMonth()}`;
+      if (monthPositions[mk] === undefined) monthPositions[mk] = weekIdx;
+    }
+    weekIdx++;
+  }
+
+  const CELL = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cell'));
+  const GAP  = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gap'));
+
+  // Month labels, positioned to scroll in lockstep with the grid (same wrapper)
+  const sortedMonthEntries = Object.entries(monthPositions).sort((a,b) => a[1]-b[1]);
+  monthLabelsCont.style.width = `${weekIdx * (CELL + GAP)}px`;
+  for (const [mk, wi] of sortedMonthEntries) {
+    const m = parseInt(mk.split('-')[1]);
+    const label = document.createElement('span');
+    label.className = 'month-label';
+    label.textContent = MONTHS[m];
+    label.style.left = `${wi * (CELL + GAP)}px`;
+    monthLabelsCont.appendChild(label);
+  }
+
+  for (const col of weekCols) {
+    const weekDiv = document.createElement('div');
+    weekDiv.className = 'week-col';
+
+    for (const day of col) {
+      const cell = document.createElement('div');
+      cell.className = 'heat-cell';
+      const dk = dateKey(day);
+      const cnt = dayMap[dk] || 0;
+      const inRange = day.getFullYear() === viewYear && day >= jan1 && day <= rangeCap;
+
+      if (inRange) {
+        const lv = level(cnt, maxCount);
+        cell.setAttribute('data-level', lv);
+        cell.setAttribute('data-date', dk);
+        cell.setAttribute('data-count', cnt);
+
+        cell.addEventListener('mouseenter', showTooltip);
+        cell.addEventListener('mouseleave', hideTooltip);
+        cell.addEventListener('click', () => showDayPanel(dk));
+      } else {
+        cell.style.cursor = 'default';
+      }
+      weekDiv.appendChild(cell);
+    }
+    grid.appendChild(weekDiv);
+  }
+
+  // auto-scroll: current year scrolls to today's column, past years scroll to the end (Dec)
+  const wrap = document.querySelector('.heatmap-grid-wrap');
+  if (wrap) {
+    if (isCurrentYear) {
+      const todayWeekIdx = Math.floor((today - gridStart) / (7 * 24 * 60 * 60 * 1000));
+      const targetX = todayWeekIdx * (CELL + GAP);
+      wrap.scrollLeft = Math.max(0, targetX - wrap.clientWidth + (CELL + GAP) * 3);
+    } else {
+      wrap.scrollLeft = wrap.scrollWidth;
+    }
+  }
+}
+
+// ─── TOOLTIP ───────────────────────────────────────────────
+const tooltip = document.getElementById('tooltip');
+function showTooltip(e) {
+  const cell = e.currentTarget;
+  const dk   = cell.getAttribute('data-date');
+  const cnt  = parseInt(cell.getAttribute('data-count'));
+  const d    = parseKey(dk);
+  const dayCommits = commits.filter(c => c.date === dk);
+
+  tooltip.innerHTML = `
+    <div class="tt-date">${fmtDate(d)}</div>
+    <div class="tt-count">${cnt} commit${cnt !== 1 ? 's' : ''}</div>
+    ${dayCommits.slice(0,3).map(c=>`<div style="color:var(--muted);margin-top:3px;">· ${c.msg.slice(0,40)}${c.msg.length>40?'…':''}</div>`).join('')}
+    ${cnt > 3 ? `<div style="color:var(--muted);font-size:10px;margin-top:2px;">+${cnt-3} more</div>` : ''}
+  `;
+  tooltip.style.display = 'block';
+  positionTooltip(e);
+}
+function positionTooltip(e) {
+  const pad = 10;
+  let x = e.clientX + pad;
+  let y = e.clientY - tooltip.offsetHeight - pad;
+  if (x + tooltip.offsetWidth > window.innerWidth - pad) x = e.clientX - tooltip.offsetWidth - pad;
+  if (y < pad) y = e.clientY + pad;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top  = y + 'px';
+}
+document.addEventListener('mousemove', e => {
+  if (tooltip.style.display === 'block') positionTooltip(e);
+});
+function hideTooltip() {
+  tooltip.style.display = 'none';
+}
+
+// ─── DAY PANEL ─────────────────────────────────────────────
+function showDayPanel(dk) {
+  const panel = document.getElementById('day-panel');
+  const d = parseKey(dk);
+  const dayCommits = commits.filter(c => c.date === dk).reverse();
+  document.getElementById('dp-date').textContent = fmtDate(d);
+  document.getElementById('dp-count').textContent = `${dayCommits.length} commit${dayCommits.length!==1?'s':''}`;
+  const list = document.getElementById('dp-list');
+  if (!dayCommits.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-family:JetBrains Mono,monospace;font-size:11px;padding:4px 0;">no commits on this day</div>';
+  } else {
+    list.innerHTML = dayCommits.map(c=>`
+      <div class="dc-item">
+        <div class="dc-dot"></div>
+        <div>
+          <div class="dc-text">${escHtml(c.msg)}</div>
+          <div class="dc-habit">${c.habit} · ${fmtTime(c.ts)}</div>
+        </div>
+      </div>`).join('');
+  }
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+document.getElementById('dp-close').addEventListener('click', () => {
+  document.getElementById('day-panel').classList.remove('visible');
+});
+
+// ─── YEAR TABS ─────────────────────────────────────────────
+function buildYearTabs() {
+  const container = document.getElementById('year-tabs');
+  container.innerHTML = '';
+  const thisYear = new Date().getFullYear();
+  const years = [thisYear, thisYear-1, thisYear-2];
+  for (const y of years) {
+    const btn = document.createElement('button');
+    btn.className = 'year-tab' + (y === viewYear ? ' active' : '');
+    btn.textContent = y;
+    btn.addEventListener('click', () => {
+      viewYear = y;
+      buildYearTabs();
+      buildHeatmap();
+    });
+    container.appendChild(btn);
+  }
+}
+
+// ─── HABIT TAGS ────────────────────────────────────────────
+function buildHabitTags() {
+  const row = document.getElementById('habit-row');
+  // remove existing tags (not input/button)
+  Array.from(row.querySelectorAll('.habit-tag')).forEach(el => el.remove());
+  const newInput = document.getElementById('new-habit-input');
+
+  for (const h of habits) {
+    const tag = document.createElement('div');
+    tag.className = 'habit-tag' + (h === activeHabit ? ' active' : '');
+
+    const label = document.createElement('span');
+    label.className = 'habit-tag-label';
+    label.textContent = h;
+    label.title = 'click to select · double-click to rename';
+
+    let clickTimer = null;
+    label.addEventListener('click', () => {
+      if (label.isContentEditable) return; // mid-rename, ignore select
+      if (clickTimer) return; // a second click is coming, let dblclick handle it
+      clickTimer = setTimeout(() => {
+        clickTimer = null;
+        activeHabit = h;
+        document.getElementById('active-branch').textContent = h;
+        buildHabitTags();
+      }, 220);
+    });
+
+    label.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      clearTimeout(clickTimer);
+      clickTimer = null;
+      startRenameHabit(label, h);
+    });
+
+    const del = document.createElement('button');
+    del.className = 'habit-tag-delete';
+    del.textContent = '×';
+    del.title = 'delete branch';
+    del.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteHabit(h);
+    });
+
+    tag.appendChild(label);
+    tag.appendChild(del);
+    row.insertBefore(tag, newInput);
+  }
+}
+
+function startRenameHabit(label, oldName) {
+  label.contentEditable = 'true';
+  label.focus();
+  // select all text
+  const range = document.createRange();
+  range.selectNodeContents(label);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  function commit() {
+    label.contentEditable = 'false';
+    let newName = label.textContent.trim().toLowerCase().replace(/\s+/g, '-');
+    if (!newName || newName === oldName) {
+      label.textContent = oldName;
+      return;
+    }
+    if (habits.includes(newName)) {
+      alert(`Branch "${newName}" already exists.`);
+      label.textContent = oldName;
+      return;
+    }
+    renameHabit(oldName, newName);
+  }
+
+  label.addEventListener('blur', commit, { once: true });
+  label.addEventListener('keydown', function onKey(e) {
+    if (e.key === 'Enter') { e.preventDefault(); label.blur(); }
+    if (e.key === 'Escape') { label.textContent = oldName; label.blur(); }
+  });
+}
+
+function renameHabit(oldName, newName) {
+  habits = habits.map(h => h === oldName ? newName : h);
+  saveHabits(habits);
+  // update all commits tagged with the old habit name
+  commits = commits.map(c => c.habit === oldName ? { ...c, habit: newName } : c);
+  saveCommits(commits);
+  if (activeHabit === oldName) activeHabit = newName;
+  document.getElementById('active-branch').textContent = activeHabit;
+  buildHabitTags();
+  renderLog();
+}
+
+function deleteHabit(name) {
+  const count = commits.filter(c => c.habit === name).length;
+  const msg = count > 0
+    ? `Delete branch "${name}"? ${count} commit${count !== 1 ? 's' : ''} on this branch will also be deleted.`
+    : `Delete branch "${name}"?`;
+  if (!confirm(msg)) return;
+
+  habits = habits.filter(h => h !== name);
+  saveHabits(habits);
+  commits = commits.filter(c => c.habit !== name);
+  saveCommits(commits);
+
+  if (activeHabit === name) {
+    activeHabit = habits[0] || null;
+    document.getElementById('active-branch').textContent = activeHabit || '—';
+  }
+
+  buildHabitTags();
+  buildHeatmap();
+  renderLog();
+  updateStreak();
+
+  if (habits.length === 0) maybeShowOnboarding();
+}
+
+document.getElementById('add-habit-btn').addEventListener('click', addHabit);
+document.getElementById('new-habit-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addHabit();
+});
+function addHabit() {
+  const inp = document.getElementById('new-habit-input');
+  const val = inp.value.trim().toLowerCase().replace(/\s+/g,'-');
+  if (!val || habits.includes(val)) { inp.value=''; return; }
+  habits.push(val);
+  saveHabits(habits);
+  activeHabit = val;
+  document.getElementById('active-branch').textContent = val;
+  inp.value = '';
+  buildHabitTags();
+}
+
+// ─── COMMIT ────────────────────────────────────────────────
+document.getElementById('commit-btn').addEventListener('click', doCommit);
+document.getElementById('commit-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doCommit();
+});
+
+function doCommit() {
+  if (!activeHabit) { alert('Add a habit branch first.'); return; }
+  const inp = document.getElementById('commit-input');
+  const msg = inp.value.trim();
+  if (!msg) { inp.focus(); inp.classList.add('shake'); setTimeout(()=>inp.classList.remove('shake'),400); return; }
+
+  const now  = new Date();
+  const entry = {
+    id:    randomHash(),
+    ts:    now.getTime(),
+    date:  dateKey(now),
+    habit: activeHabit,
+    msg:   msg
+  };
+  commits.unshift(entry);
+  saveCommits(commits);
+  inp.value = '';
+  inp.focus();
+
+  buildHeatmap();
+  renderLog();
+  updateStreak();
+}
+
+// ─── LOG ───────────────────────────────────────────────────
+function renderLog() {
+  const list = document.getElementById('log-list');
+  if (!commits.length) {
+    list.innerHTML = '<div class="empty-log"><span class="big">🌱</span>No commits yet.<br/>Write your first one above.</div>';
+    return;
+  }
+  list.innerHTML = commits.slice(0, 80).map(c => `
+    <div class="log-item" data-id="${c.id}">
+      <div class="log-meta">
+        <span class="log-hash">${c.id}</span>
+        <span class="log-habit-tag">${c.habit}</span>
+        <span class="log-time">${fmtTime(c.ts)}</span>
+      </div>
+      <div class="log-msg">${escHtml(c.msg)}</div>
+      <button class="log-delete" data-id="${c.id}">delete</button>
+    </div>`).join('');
+
+  list.querySelectorAll('.log-delete').forEach(btn => {
+    btn.addEventListener('click', () => deleteCommit(btn.dataset.id));
+  });
+}
+
+function deleteCommit(id) {
+  commits = commits.filter(c => c.id !== id);
+  saveCommits(commits);
+  buildHeatmap();
+  renderLog();
+  updateStreak();
+}
+
+document.getElementById('clear-all-btn').addEventListener('click', () => {
+  if (!confirm('Clear all commits? This cannot be undone.')) return;
+  commits = [];
+  saveCommits(commits);
+  buildHeatmap();
+  renderLog();
+  updateStreak();
+  document.getElementById('day-panel').classList.remove('visible');
+});
+
+// ─── STREAK ────────────────────────────────────────────────
+function updateStreak() {
+  const allDates = [...new Set(commits.map(c=>c.date))].sort().reverse();
+  if (!allDates.length) { document.getElementById('streak-badge').textContent = '🔥 0 day streak'; return; }
+
+  let streak = 0;
+  let cur = new Date();
+  cur.setHours(0,0,0,0);
+
+  // allow today or yesterday to start streak
+  const todayKey = dateKey(cur);
+  const yest = new Date(cur); yest.setDate(yest.getDate()-1);
+  const yestKey = dateKey(yest);
+
+  if (!allDates.includes(todayKey) && !allDates.includes(yestKey)) {
+    document.getElementById('streak-badge').textContent = '🔥 0 day streak';
+    return;
+  }
+
+  // count consecutive days backwards from today
+  let check = new Date();
+  check.setHours(0,0,0,0);
+  while (true) {
+    const k = dateKey(check);
+    if (allDates.includes(k)) {
+      streak++;
+      check.setDate(check.getDate()-1);
+    } else break;
+  }
+  document.getElementById('streak-badge').textContent = `🔥 ${streak} day streak`;
+}
+
+// ─── TODAY LABEL ───────────────────────────────────────────
+function updateTodayLabel() {
+  const d = new Date();
+  document.getElementById('today-label').textContent = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+}
+
+// ─── HELPERS ───────────────────────────────────────────────
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── ONBOARDING ────────────────────────────────────────────
+let onboardHabits = [];
+
+function maybeShowOnboarding() {
+  if (habits.length > 0) return false;
+  document.getElementById('onboard-overlay').classList.add('visible');
+  document.getElementById('onboard-input').focus();
+  return true;
+}
+
+function renderOnboardTags() {
+  const cont = document.getElementById('onboard-tags');
+  cont.innerHTML = onboardHabits.map((h,i) => `
+    <span class="onboard-tag">${escHtml(h)}<button data-i="${i}">×</button></span>
+  `).join('');
+  cont.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      onboardHabits.splice(parseInt(btn.dataset.i), 1);
+      renderOnboardTags();
+      updateOnboardStartBtn();
+    });
+  });
+}
+
+function updateOnboardStartBtn() {
+  document.getElementById('onboard-start-btn').disabled = onboardHabits.length === 0;
+}
+
+function addOnboardHabit() {
+  const inp = document.getElementById('onboard-input');
+  const val = inp.value.trim().toLowerCase().replace(/\s+/g,'-');
+  if (!val || onboardHabits.includes(val)) { inp.value=''; return; }
+  onboardHabits.push(val);
+  inp.value = '';
+  renderOnboardTags();
+  updateOnboardStartBtn();
+  inp.focus();
+}
+
+document.getElementById('onboard-add-btn').addEventListener('click', addOnboardHabit);
+document.getElementById('onboard-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); addOnboardHabit(); }
+});
+document.getElementById('onboard-start-btn').addEventListener('click', () => {
+  if (!onboardHabits.length) return;
+  habits = [...onboardHabits];
+  saveHabits(habits);
+  activeHabit = habits[0];
+  document.getElementById('onboard-overlay').classList.remove('visible');
+  buildHabitTags();
+  document.getElementById('active-branch').textContent = activeHabit;
+  document.getElementById('commit-input').focus();
+});
+
+// ─── INIT ──────────────────────────────────────────────────
+(function init() {
+  updateTodayLabel();
+  buildYearTabs();
+  buildHabitTags();
+  buildHeatmap();
+  renderLog();
+  updateStreak();
+
+  const showingOnboarding = maybeShowOnboarding();
+  if (!showingOnboarding) {
+    document.getElementById('commit-input').focus();
+    document.getElementById('active-branch').textContent = activeHabit;
+  }
+})();
+</script>
+</body>
+</html>
