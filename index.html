@@ -43,6 +43,9 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    max-width: 980px;
+    margin: 0 auto;
+    width: 100%;
   }
   .logo {
     font-family: 'JetBrains Mono', monospace;
@@ -70,6 +73,9 @@
     display: flex;
     flex: 1;
     overflow: hidden;
+    max-width: 980px;
+    margin: 0 auto;
+    width: 100%;
   }
   main {
     flex: 1;
@@ -78,6 +84,7 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
+    min-width: 0;
   }
 
   /* ─── COMMIT INPUT ─── */
@@ -387,110 +394,6 @@
   #tooltip .tt-date { color: var(--muted); font-size: 10px; margin-bottom: 4px; }
   #tooltip .tt-count { color: var(--green4); font-weight: 500; }
 
-  /* ─── SIDEBAR ─── */
-  .sidebar {
-    width: 300px;
-    flex-shrink: 0;
-    border-left: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .sidebar-header {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .sidebar-header span { color: var(--text); }
-  .clear-btn {
-    font-size: 10px;
-    color: #f85149;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    opacity: .6;
-    transition: opacity .15s;
-  }
-  .clear-btn:hover { opacity: 1; }
-  .log-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px 0;
-  }
-  .log-list::-webkit-scrollbar { width: 4px; }
-  .log-list::-webkit-scrollbar-track { background: transparent; }
-  .log-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-  .log-item {
-    padding: 10px 16px;
-    border-bottom: 1px solid rgba(48,54,61,.5);
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    animation: fadeIn .2s ease;
-  }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-  .log-item:last-child { border-bottom: none; }
-  .log-meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .log-hash {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--accent);
-  }
-  .log-habit-tag {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    padding: 1px 6px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    color: var(--muted);
-  }
-  .log-time {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    margin-left: auto;
-  }
-  .log-msg {
-    font-size: 12px;
-    color: var(--text);
-    line-height: 1.4;
-    word-break: break-word;
-  }
-  .log-delete {
-    background: none;
-    border: none;
-    color: #484f58;
-    cursor: pointer;
-    font-size: 10px;
-    font-family: 'JetBrains Mono', monospace;
-    padding: 0;
-    align-self: flex-end;
-    transition: color .12s;
-  }
-  .log-delete:hover { color: #f85149; }
-
-  .empty-log {
-    padding: 32px 16px;
-    text-align: center;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    line-height: 2;
-  }
-  .empty-log .big { font-size: 28px; display: block; margin-bottom: 8px; }
-
   /* ─── DAY PANEL ─── */
   .day-panel {
     background: var(--surface);
@@ -527,6 +430,18 @@
   }
   .dc-text { flex: 1; line-height: 1.4; }
   .dc-habit { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); }
+  .dc-delete {
+    background: none;
+    border: none;
+    color: #484f58;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 2px;
+    flex-shrink: 0;
+    transition: color .12s;
+  }
+  .dc-delete:hover { color: #f85149; }
 
   /* scrollbar global */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -535,7 +450,6 @@
 
   /* responsive */
   @media (max-width: 800px) {
-    .sidebar { display: none; }
     :root { --cell: 10px; --gap: 2px; }
   }
 
@@ -667,8 +581,6 @@
     border-color: var(--border);
   }
 </style>
-<!-- Vercel Web Analytics -->
-<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 </head>
 <body>
 
@@ -782,14 +694,6 @@
       </div>
     </div>
   </main>
-
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <span>commit log</span>
-      <button class="clear-btn" id="clear-all-btn">clear all</button>
-    </div>
-    <div class="log-list" id="log-list"></div>
-  </aside>
 </div>
 
 <div id="tooltip"></div>
@@ -854,13 +758,11 @@ function buildDayMap(rangeStart, rangeEnd, habitFilter) {
 
 // colour level 0-4 based on count, using GitHub-style fixed thresholds
 // scaled to the max commits-per-day seen this year
-function level(count, max) {
+function level(count) {
   if (!count) return 0;
-  if (max <= 1) return count >= 1 ? 4 : 0; // only ever 1/day -> full green
-  const step = max / 4;
-  if (count <= step) return 1;
-  if (count <= step * 2) return 2;
-  if (count <= step * 3) return 3;
+  if (count === 1) return 1;
+  if (count <= 3) return 2;
+  if (count <= 6) return 3;
   return 4;
 }
 
@@ -889,8 +791,6 @@ function buildHeatmap() {
   const rangeCap = isCurrentYear ? today : dec31;
 
   const dayMap = buildDayMap(gridStart, rangeCap, null);
-  const allCounts = Object.values(dayMap);
-  const maxCount  = allCounts.length ? Math.max(...allCounts) : 0;
 
   const totalInRange = commits.filter(c => {
     const d = new Date(c.ts); d.setHours(0,0,0,0);
@@ -946,7 +846,7 @@ function buildHeatmap() {
       const inRange = day.getFullYear() === viewYear && day >= jan1 && day <= rangeCap;
 
       if (inRange) {
-        const lv = level(cnt, maxCount);
+        const lv = level(cnt);
         cell.setAttribute('data-level', lv);
         cell.setAttribute('data-date', dk);
         cell.setAttribute('data-count', cnt);
@@ -1023,11 +923,19 @@ function showDayPanel(dk) {
     list.innerHTML = dayCommits.map(c=>`
       <div class="dc-item">
         <div class="dc-dot"></div>
-        <div>
+        <div style="flex:1;min-width:0;">
           <div class="dc-text">${escHtml(c.msg)}</div>
           <div class="dc-habit">${c.habit} · ${fmtTime(c.ts)}</div>
         </div>
+        <button class="dc-delete" data-id="${c.id}" title="delete commit">×</button>
       </div>`).join('');
+
+    list.querySelectorAll('.dc-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        deleteCommit(btn.dataset.id);
+        showDayPanel(dk); // refresh panel
+      });
+    });
   }
   panel.classList.add('visible');
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1146,7 +1054,6 @@ function renameHabit(oldName, newName) {
   if (activeHabit === oldName) activeHabit = newName;
   document.getElementById('active-branch').textContent = activeHabit;
   buildHabitTags();
-  renderLog();
 }
 
 function deleteHabit(name) {
@@ -1168,7 +1075,6 @@ function deleteHabit(name) {
 
   buildHabitTags();
   buildHeatmap();
-  renderLog();
   updateStreak();
 
   if (habits.length === 0) maybeShowOnboarding();
@@ -1216,50 +1122,16 @@ function doCommit() {
   inp.focus();
 
   buildHeatmap();
-  renderLog();
   updateStreak();
 }
 
 // ─── LOG ───────────────────────────────────────────────────
-function renderLog() {
-  const list = document.getElementById('log-list');
-  if (!commits.length) {
-    list.innerHTML = '<div class="empty-log"><span class="big">🌱</span>No commits yet.<br/>Write your first one above.</div>';
-    return;
-  }
-  list.innerHTML = commits.slice(0, 80).map(c => `
-    <div class="log-item" data-id="${c.id}">
-      <div class="log-meta">
-        <span class="log-hash">${c.id}</span>
-        <span class="log-habit-tag">${c.habit}</span>
-        <span class="log-time">${fmtTime(c.ts)}</span>
-      </div>
-      <div class="log-msg">${escHtml(c.msg)}</div>
-      <button class="log-delete" data-id="${c.id}">delete</button>
-    </div>`).join('');
-
-  list.querySelectorAll('.log-delete').forEach(btn => {
-    btn.addEventListener('click', () => deleteCommit(btn.dataset.id));
-  });
-}
-
 function deleteCommit(id) {
   commits = commits.filter(c => c.id !== id);
   saveCommits(commits);
   buildHeatmap();
-  renderLog();
   updateStreak();
 }
-
-document.getElementById('clear-all-btn').addEventListener('click', () => {
-  if (!confirm('Clear all commits? This cannot be undone.')) return;
-  commits = [];
-  saveCommits(commits);
-  buildHeatmap();
-  renderLog();
-  updateStreak();
-  document.getElementById('day-panel').classList.remove('visible');
-});
 
 // ─── STREAK ────────────────────────────────────────────────
 function updateStreak() {
@@ -1364,7 +1236,6 @@ document.getElementById('onboard-start-btn').addEventListener('click', () => {
   buildYearTabs();
   buildHabitTags();
   buildHeatmap();
-  renderLog();
   updateStreak();
 
   const showingOnboarding = maybeShowOnboarding();
